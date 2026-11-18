@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @run-at       document-idle
+// @homepageURL  https://github.com/Hadvar42/Userscripts
+// @updateURL    https://raw.githubusercontent.com/Hadvar42/Userscripts/main/freelancermap-filter.user.js
+// @downloadURL  https://raw.githubusercontent.com/Hadvar42/Userscripts/main/freelancermap-filter.user.js
 // ==/UserScript==
 
 (function () {

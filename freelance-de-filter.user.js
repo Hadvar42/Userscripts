@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name         freelance.de – Erweiterte Projektfilter
 // @namespace    https://www.freelance.de/
-// @version      1.5.0
+// @version      1.5.1
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote und Vertragstyp aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelance.de/*
 // @match        https://freelance.de/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @run-at       document-idle
+// @homepageURL  https://github.com/Hadvar42/Userscripts
+// @updateURL    https://raw.githubusercontent.com/Hadvar42/Userscripts/main/freelance-de-filter.user.js
+// @downloadURL  https://raw.githubusercontent.com/Hadvar42/Userscripts/main/freelance-de-filter.user.js
 // ==/UserScript==
 
 (function () {
