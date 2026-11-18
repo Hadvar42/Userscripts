@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelance.de – Erweiterte Projektfilter
 // @namespace    https://www.freelance.de/
-// @version      1.3.0
+// @version      1.4.0
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote und Vertragstyp aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelance.de/*
 // @match        https://freelance.de/*
@@ -180,10 +180,20 @@
 
     const isOld = list.map(({ d }) => (d[dateKey] ? daysAgo(d[dateKey]) > n : null));
     const first = isOld.indexOf(true);
-    if (first === -1) return;                                   // alles auf dieser Seite ist neu genug
+    const days = n === 1 ? '1 Tag' : `${n} Tage`;
+
+    // Grenze liegt erst auf einer der nächsten Seiten → Hinweis unter dem letzten sichtbaren Projekt
+    if (first === -1) {
+      let last = list.length - 1;
+      while (last >= 0 && !list[last].visible) last--;
+      if (last >= 0 && isOld.some((o) => o === false)) {
+        setAttr(list[last].card, 'data-flf-cutoff', 'pending');
+        setAttr(list[last].card, 'data-flf-cutoff-label', `▼ Noch nichts älter als ${days} – auf der nächsten Seite weiterlesen`);
+      }
+      return;
+    }
     if (isOld.slice(first).some((o) => o === false)) return;    // nicht nach Datum sortiert
 
-    const days = n === 1 ? '1 Tag' : `${n} Tage`;
     let i = list.findIndex((x, idx) => idx >= first && x.visible);
     if (i !== -1) {
       setAttr(list[i].card, 'data-flf-cutoff', 'before');
@@ -244,10 +254,13 @@
     search-project-card.flf-dim > a { opacity: .35; }
     search-project-card.flf-dim:hover > a { opacity: .8; }
     search-project-card[data-flf-cutoff=before]::before,
-    search-project-card[data-flf-cutoff=after]::after {
+    search-project-card[data-flf-cutoff=after]::after,
+    search-project-card[data-flf-cutoff=pending]::after {
       content: attr(data-flf-cutoff-label); display: block; padding: 6px 4px; margin: 6px 0 12px;
       font: 700 14px sans-serif; color: #c0392b; border-top: 5px solid #c0392b; }
-    search-project-card[data-flf-cutoff=after]::after { margin: 12px 0 6px; }
+    search-project-card[data-flf-cutoff=after]::after,
+    search-project-card[data-flf-cutoff=pending]::after { margin: 12px 0 6px; }
+    search-project-card[data-flf-cutoff=pending]::after { color: #888; border-top: 3px dashed #aaa; font-weight: 600; }
     search-project-card.flf-highlight .card { outline: 3px solid #f5b700; background: #fffbea; }
     .flf-reason { font: 12px sans-serif; color: #a33; margin: 0 0 4px 4px; }
     #flf-btn { position: fixed; right: 16px; bottom: 16px; z-index: 99999; background: #242d2e; color: #fff;

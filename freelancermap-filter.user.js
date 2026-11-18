@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
@@ -88,6 +88,7 @@
     let m = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
     if (m) return new Date(+m[3], m[2] - 1, +m[1]);
     const d = new Date();
+    if (/^\s*\d{1,2}:\d{2}\s*(uhr)?\s*$/i.test(s)) return d;          // nur Uhrzeit = heute
     if (/heute|vor\s+\d+\s*(sek|min|std|stunde)/i.test(s)) return d;
     if (/gestern/i.test(s)) { d.setDate(d.getDate() - 1); return d; }
     m = s.match(/vor\s+(\d+)\s*tag/i);
@@ -123,6 +124,7 @@
       type: f('type'),
       start: parseStart(f('beginningMonth') || f('beginningText')),
       created: parseCreated(f('created')),
+      top: !!card.querySelector('[data-testid="top-project"]'),   // bezahltes Top-Projekt (nicht nach Datum sortiert)
     };
   }
 
@@ -176,21 +178,33 @@
   // älter als „Veröffentlicht vor mehr als … Tagen“ ist. Nur wenn die Liste
   // nach Datum sortiert ist (danach kommen nur noch ältere Projekte).
   // ---------------------------------------------------------------------------
-  function markCutoff(list, dateKey) {
-    list.forEach(({ card }) => {
+  function markCutoff(all, dateKey) {
+    all.forEach(({ card }) => {
       setAttr(card, 'data-flf-cutoff', null);
       setAttr(card, 'data-flf-cutoff-label', null);
     });
+    // Top-Projekte stehen unabhängig vom Datum oben und zählen für die Grenze nicht
+    const list = all.filter((x) => !x.d.top);
 
     const n = parseInt(settings.values.maxAge, 10);
     if (isNaN(n)) return;
 
     const isOld = list.map(({ d }) => (d[dateKey] ? daysAgo(d[dateKey]) > n : null));
     const first = isOld.indexOf(true);
-    if (first === -1) return;                                   // alles auf dieser Seite ist neu genug
+    const days = n === 1 ? '1 Tag' : `${n} Tage`;
+
+    // Grenze liegt erst auf einer der nächsten Seiten → Hinweis unter dem letzten sichtbaren Projekt
+    if (first === -1) {
+      let last = list.length - 1;
+      while (last >= 0 && !list[last].visible) last--;
+      if (last >= 0 && isOld.some((o) => o === false)) {
+        setAttr(list[last].card, 'data-flf-cutoff', 'pending');
+        setAttr(list[last].card, 'data-flf-cutoff-label', `▼ Noch nichts älter als ${days} – auf der nächsten Seite weiterlesen`);
+      }
+      return;
+    }
     if (isOld.slice(first).some((o) => o === false)) return;    // nicht nach Datum sortiert
 
-    const days = n === 1 ? '1 Tag' : `${n} Tage`;
     let i = list.findIndex((x, idx) => idx >= first && x.visible);
     if (i !== -1) {
       setAttr(list[i].card, 'data-flf-cutoff', 'before');
@@ -245,12 +259,13 @@
     .project-card[data-flf="dim"] > * { opacity: .35; }
     .project-card[data-flf="dim"]:hover > * { opacity: .8; }
     .project-card[data-flf-cutoff=before] { margin-top: 44px !important; }
-    .project-card[data-flf-cutoff=after] { margin-bottom: 44px !important; }
+    .project-card[data-flf-cutoff=after], .project-card[data-flf-cutoff=pending] { margin-bottom: 44px !important; }
     .project-card[data-flf-cutoff]::after {
       content: attr(data-flf-cutoff-label); position: absolute; left: 0; right: 0; padding: 4px 2px;
       font: 700 14px sans-serif; color: #c0392b; border-top: 5px solid #c0392b; pointer-events: none; }
     .project-card[data-flf-cutoff=before]::after { top: -40px; }
-    .project-card[data-flf-cutoff=after]::after { bottom: -40px; }
+    .project-card[data-flf-cutoff=after]::after, .project-card[data-flf-cutoff=pending]::after { bottom: -40px; }
+    .project-card[data-flf-cutoff=pending]::after { color: #888; border-top: 3px dashed #aaa; font-weight: 600; }
     .project-card[data-flf-reason]::before { content: attr(data-flf-reason); position: absolute; top: 2px; left: 8px;
       font: 11px sans-serif; color: #a33; z-index: 1; }
     .project-card[data-flf-hl] { outline: 3px solid #f5b700; background: #fffbea; }
