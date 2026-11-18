@@ -1,5 +1,7 @@
 # Userscripts
 
+> **Hinweis:** Die Skripte und übrigen Inhalte dieses Repositorys wurden mit KI-Unterstützung (Claude von Anthropic) erstellt.
+
 Tampermonkey-Skripte mit zusätzlichen Filtern für Freelancer-Projektbörsen.
 
 | Skript | Seite | Installieren |
