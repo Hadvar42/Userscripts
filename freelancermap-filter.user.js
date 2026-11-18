@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.2.1
+// @version      1.3.0
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
@@ -199,8 +199,14 @@
     if (isNaN(n)) return;
 
     const isOld = list.map(({ d }) => (d[dateKey] ? daysAgo(d[dateKey]) > n : null));
-    const first = isOld.indexOf(true);
     const days = n === 1 ? '1 Tag' : `${n} Tage`;
+
+    // Die Sortierung ist nicht streng: einzelne ältere „Ausreißer“ können zwischen neueren stehen.
+    // Gesucht ist daher der Beginn des Endstücks der Liste, in dem nur noch alte Projekte kommen.
+    let start = list.length;
+    while (start > 0 && isOld[start - 1] !== false) start--;
+    while (start < list.length && isOld[start] !== true) start++;   // Projekte ohne Datum am Anfang überspringen
+    const first = start < list.length ? start : -1;
     debugLog('Altersgrenze', {
       projekte: all.length, topProjekte: all.length - list.length, grenzeTage: n,
       daten: list.map(({ d }) => (d[dateKey] ? fmt(d[dateKey]) : '?')).join(' '),
@@ -217,7 +223,6 @@
       }
       return;
     }
-    if (isOld.slice(first).some((o) => o === false)) return;    // nicht nach Datum sortiert
 
     let i = list.findIndex((x, idx) => idx >= first && x.visible);
     if (i !== -1) {
