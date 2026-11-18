@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
@@ -168,6 +168,15 @@
   // Die Seite ist eine React-App. Damit React nicht durcheinanderkommt, fügt das
   // Skript keine Elemente in die Karten ein, sondern setzt nur data-Attribute.
   // ---------------------------------------------------------------------------
+  // Diagnose: in der Browser-Konsole (F12) mit dem Filter „FM-Filter“ sichtbar; nur bei Änderungen
+  let lastLog = '';
+  function debugLog(label, data) {
+    const sig = label + JSON.stringify(data);
+    if (sig === lastLog) return;
+    lastLog = sig;
+    console.debug('[FM-Filter] ' + label, data);
+  }
+
   function setAttr(el, name, value) {
     if (value == null) { if (el.hasAttribute(name)) el.removeAttribute(name); }
     else if (el.getAttribute(name) !== value) el.setAttribute(name, value);
@@ -192,6 +201,11 @@
     const isOld = list.map(({ d }) => (d[dateKey] ? daysAgo(d[dateKey]) > n : null));
     const first = isOld.indexOf(true);
     const days = n === 1 ? '1 Tag' : `${n} Tage`;
+    debugLog('Altersgrenze', {
+      projekte: all.length, topProjekte: all.length - list.length, grenzeTage: n,
+      daten: list.map(({ d }) => (d[dateKey] ? fmt(d[dateKey]) : '?')).join(' '),
+      alt: isOld.map((o) => (o === null ? '?' : o ? 'A' : 'n')).join(''),
+    });
 
     // Grenze liegt erst auf einer der nächsten Seiten → Hinweis unter dem letzten sichtbaren Projekt
     if (first === -1) {
@@ -402,6 +416,10 @@
     timer = setTimeout(applyFilters, 150);
   });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  // Sicherheitsnetz: falls ein Seitenwechsel vom Observer nicht erfasst wird, jede Sekunde nachprüfen.
+  // Unverändertes wird dabei nicht neu geschrieben, das kostet praktisch nichts.
+  setInterval(() => { if (!document.hidden) applyFilters(); }, 1000);
 
   applyFilters();
 })();
