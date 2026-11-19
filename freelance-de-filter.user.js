@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelance.de – Erweiterte Projektfilter
 // @namespace    https://www.freelance.de/
-// @version      1.5.1
+// @version      1.5.2
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote und Vertragstyp aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelance.de/*
 // @match        https://freelance.de/*
@@ -177,6 +177,7 @@
       setAttr(card, 'data-flf-cutoff', null);
       setAttr(card, 'data-flf-cutoff-label', null);
     });
+    document.querySelectorAll('[data-flf-cutoff-list]').forEach((el) => el.removeAttribute('data-flf-cutoff-list'));
 
     const n = parseInt(settings.values.maxAge, 10);
     if (isNaN(n)) return;
@@ -212,7 +213,11 @@
     if (i >= 0) {
       setAttr(list[i].card, 'data-flf-cutoff', 'after');
       setAttr(list[i].card, 'data-flf-cutoff-label', `▲ Alle weiteren Projekte sind älter als ${days}`);
+      return;
     }
+    // Alle Projekte der Seite sind zu alt und ausgeblendet → Hinweis am Listen-Container
+    const container = list[first].card.parentElement;
+    if (container) setAttr(container, 'data-flf-cutoff-list', `▲ Alle Projekte auf dieser Seite sind älter als ${days}`);
   }
 
   function applyFilters() {
@@ -269,6 +274,8 @@
     search-project-card[data-flf-cutoff=after]::after,
     search-project-card[data-flf-cutoff=pending]::after { margin: 12px 0 6px; }
     search-project-card[data-flf-cutoff=pending]::after { color: #888; border-top: 3px dashed #aaa; font-weight: 600; }
+    [data-flf-cutoff-list]::before { content: attr(data-flf-cutoff-list); display: block; grid-column: 1 / -1;
+      padding: 6px 4px; margin: 6px 0 12px; font: 700 14px sans-serif; color: #c0392b; border-top: 5px solid #c0392b; }
     search-project-card.flf-highlight .card { outline: 3px solid #f5b700; background: #fffbea; }
     .flf-reason { font: 12px sans-serif; color: #a33; margin: 0 0 4px 4px; }
     #flf-btn { position: fixed; right: 16px; bottom: 16px; z-index: 99999; background: #242d2e; color: #fff;

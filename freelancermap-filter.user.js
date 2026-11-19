@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.3.1
+// @version      1.3.2
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
@@ -195,6 +195,7 @@
       setAttr(card, 'data-flf-cutoff', null);
       setAttr(card, 'data-flf-cutoff-label', null);
     });
+    document.querySelectorAll('[data-flf-cutoff-list]').forEach((el) => el.removeAttribute('data-flf-cutoff-list'));
     // Top-Projekte stehen unabhängig vom Datum oben und zählen für die Grenze nicht
     const list = all.filter((x) => !x.d.top);
 
@@ -237,7 +238,11 @@
     if (i >= 0) {
       setAttr(list[i].card, 'data-flf-cutoff', 'after');
       setAttr(list[i].card, 'data-flf-cutoff-label', `▲ Alle weiteren Projekte sind älter als ${days}`);
+      return;
     }
+    // Alle Projekte der Seite sind zu alt und ausgeblendet → Hinweis am Listen-Container
+    const container = list[first].card.parentElement;
+    if (container) setAttr(container, 'data-flf-cutoff-list', `▲ Alle Projekte auf dieser Seite sind älter als ${days}`);
   }
 
   function applyFilters() {
@@ -288,6 +293,8 @@
     .project-card[data-flf-cutoff=before]::after { top: -40px; }
     .project-card[data-flf-cutoff=after]::after, .project-card[data-flf-cutoff=pending]::after { bottom: -40px; }
     .project-card[data-flf-cutoff=pending]::after { color: #888; border-top: 3px dashed #aaa; font-weight: 600; }
+    [data-flf-cutoff-list]::before { content: attr(data-flf-cutoff-list); display: block; grid-column: 1 / -1;
+      padding: 6px 4px; margin: 6px 0 12px; font: 700 14px sans-serif; color: #c0392b; border-top: 5px solid #c0392b; }
     .project-card[data-flf-reason]::before { content: attr(data-flf-reason); position: absolute; top: 2px; left: 8px;
       font: 11px sans-serif; color: #a33; z-index: 1; }
     .project-card[data-flf-hl] { outline: 3px solid #f5b700; background: #fffbea; }
