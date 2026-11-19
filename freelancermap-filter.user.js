@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         freelancermap.de – Erweiterte Projektfilter
 // @namespace    https://www.freelancermap.de/
-// @version      1.3.2
+// @version      1.3.3
 // @description  Blendet Projekte nach Stichwörtern, Datum, Remote-Anteil und Vertragsart aus oder graut sie aus – pro Filter einstellbar.
 // @match        https://www.freelancermap.de/*
 // @match        https://freelancermap.de/*
@@ -128,6 +128,8 @@
       start: parseStart(f('beginningMonth') || f('beginningText')),
       created: parseCreated(f('created')),
       top: !!card.querySelector('[data-testid="top-project"]'),   // bezahltes Top-Projekt (nicht nach Datum sortiert)
+      // Gehört zur eigentlichen Ergebnisliste (nicht z. B. „Ähnliche Projekte“, die nachgeladen werden)
+      main: !!card.closest('#project-search-result') || !document.querySelector('#project-search-result'),
     };
   }
 
@@ -196,8 +198,8 @@
       setAttr(card, 'data-flf-cutoff-label', null);
     });
     document.querySelectorAll('[data-flf-cutoff-list]').forEach((el) => el.removeAttribute('data-flf-cutoff-list'));
-    // Top-Projekte stehen unabhängig vom Datum oben und zählen für die Grenze nicht
-    const list = all.filter((x) => !x.d.top);
+    // Nur die Ergebnisliste zählt; Top-Projekte stehen unabhängig vom Datum oben und zählen auch nicht
+    const list = all.filter((x) => x.d.main && !x.d.top);
 
     const n = parseInt(settings.values.maxAge, 10);
     if (isNaN(n)) return;
@@ -212,7 +214,7 @@
     while (start < list.length && isOld[start] !== true) start++;   // Projekte ohne Datum am Anfang überspringen
     const first = start < list.length ? start : -1;
     debugLog('Altersgrenze', {
-      projekte: all.length, topProjekte: all.length - list.length, grenzeTage: n,
+      projekte: list.length, ignoriert: all.length - list.length, grenzeTage: n,
       daten: list.map(({ d }) => (d[dateKey] ? fmt(d[dateKey]) : '?')).join(' '),
       alt: isOld.map((o) => (o === null ? '?' : o ? 'A' : 'n')).join(''),
     });
